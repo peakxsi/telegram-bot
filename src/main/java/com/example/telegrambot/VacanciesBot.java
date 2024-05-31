@@ -382,6 +382,225 @@ public class VacanciesBot extends TelegramLongPollingBot {
 
 
 
+    private void possibWithPackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        int choosed = Integer.parseInt(update.getCallbackQuery().getData());
+        users.get(chatId).setChoosedPack(users.get(chatId).getPacks().get(choosed));
+        users.get(chatId).setStan(0);
+
+        String str = "Оберіть дію з паком:";
+        ReplyKeyboard keyboard = createKeyboardVerticle(List.of("Вивести картки", "Редагувати", "Видалити"), List.of("showAllCardsCBD", "toRedactPackCBD", "toDeletePackCBD"));
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void showAllCardsPackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(5);
+
+        String str = "Ось ваші картки:\n";
+
+        for (String card: users.get(chatId).getChoosedPack().getAllList()) {
+            str += (card + "\n");
+        }
+
+        str += "\nВас повернено до головного меню";
+
+        sendMessageCBD(update, str);
+
+        toMainMenuCBD(update);
+    }
+
+    private void isToDeletePackCommand(Update update) {
+        String str = "Ви впевнені, що хочете видалити?";
+        ReplyKeyboard keyboard = createKeyboard(List.of("Так", "Ні"), List.of("toDefDeletePackCBD", "toMainMenuCBD"));
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void defDeletePackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).getPacks().remove(users.get(chatId).getChoosedPack());
+
+        String str = "Пак видалено! Вас повернено до головного меню";
+        sendMessageCBD(update, str);
+
+        toMainMenuCBD(update);
+    }
+
+    private void chooseChangeCommand(Update update) {
+        String str = "Оберіть дію з паком:";
+        ReplyKeyboard keyboard = createKeyboardVerticle(List.of("Змінити ім'я", "Змінити тип приватності", "Змінити склад", "Перевернути картки", "Поновити пак"), List.of("changeNameCBD", "changePrivacyCBD", "changeCompCBD", "changeSidesCBD", "renewPackCBD"));
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void changeNameCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(7);
+
+        String str = "Введіть нове ім'я для паку:";
+        ReplyKeyboard keyboard = createKeyboard(List.of("До головного меню"), List.of("toMainMenuCBD"));
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void getNewNameCommand(Update update) {
+        Long chatId = update.getMessage().getChatId();
+        users.get(chatId).setStan(0);
+
+        String name = update.getMessage().getText().toString();
+        users.get(chatId).getChoosedPack().setName(name);
+
+        String str = "Ім'я паку змінено! Вас повернено до головного меню";
+        sendMessage(update, str);
+        toMainMenu(update);
+    }
+
+    private void changePrivacyCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        String str = "Наявний стан приватності: " + users.get(chatId).getChoosedPack().getPrivacy();
+        ReplyKeyboard keyboard = createKeyboard(List.of("Змінити", "До головного меню"), List.of("defChangePrivacy", "toMainMenuCBD"));
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void defChangePrivacyCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        boolean current = users.get(chatId).getChoosedPack().getPrivacy();
+        if (current) {
+            users.get(chatId).getChoosedPack().setPrivacy(false);
+        } else {
+            users.get(chatId).getChoosedPack().setPrivacy(true);
+        }
+
+        String str = "Приватність змінено! Вас повернено до головного меню";
+        toMainMenuCBD(update);
+    }
+
+    private void changeSidesCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).getChoosedPack().changeSides();
+
+        String str = "Картки перевернуто - їх сторони змінено місцями! Вас повернено до головного меню";
+        sendMessageCBD(update, str);
+        toMainMenuCBD(update);
+    }
+
+    private void changeCompCommand(Update update) {
+        String str = "Оберіть дію з паком:";
+        ReplyKeyboard keyboard = createKeyboardVerticle(List.of("Додати картку", "Редагувати/Видалити картку"), List.of("redAddCardCBD", "redPackCBD"));
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void addNewCardCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(3);
+        System.out.println("stan==3");
+
+        String str = "Додайте першу картку! Введіть першу сторону картки і другу, розмежовуючи крапкою.  \"перше . друге\". " +
+                "Можете вводити одразу кілька карток, розмежовуючи через Enter";
+
+        sendMessageCBD(update, str, createKeyboard(List.of("Скасувати додавання"), List.of("cancelAddingCBD")));
+    }
+
+    private void redOrDelCardCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(0);
+
+        System.out.println("update.getCallbackQuery().getData() ======= " + update.getCallbackQuery().getData());
+
+        int choosed = Integer.parseInt(update.getCallbackQuery().getData());
+        users.get(chatId).setChoosedCard(choosed);
+        String str = "Оберіть дію з паком:";
+        ReplyKeyboard keyboard = createKeyboard(List.of("Редагувати", "Видалити", "До головного меню"), List.of("defRedCardCBD", "defDelCardCBD", "toMainMenuCBD"));
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void defDeleteCardCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).getChoosedPack().remove(users.get(chatId).getChoosedCard());
+        users.get(chatId).setChoosedCard(-1);
+
+        String str = "Картку видалено! Вас повернено до головного меню";
+        sendMessageCBD(update, str);
+        toMainMenuCBD(update);
+    }
+
+    private void defRedactCardCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).getChoosedPack().remove(users.get(chatId).getChoosedCard());
+        users.get(chatId).setChoosedCard(-1);
+
+        users.get(chatId).setStan(3);
+        System.out.println("stan==3");
+
+        String str = "Додайте нову версію картки! Введіть першу сторону картки і другу, розмежовуючи крапкою.  \"перше . друге\".";
+
+        sendMessageCBD(update, str, createKeyboard(List.of("Скасувати додавання"), List.of("cancelAddingCBD")));
+    }
+
+    private void renewPackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).getChoosedPack().renew();
+
+        String str = "Пак поновлено! Вас повернено до головного меню";
+        sendMessageCBD(update, str);
+        toMainMenuCBD(update);
+    }
+
+
+
+
+
+    private void showPacks(User user) {
+        try {
+            System.out.println("/////packs///////");
+            for (PackCard pack : user.getPacks()) {
+                System.out.println(pack.getName());
+            }
+            System.out.println("/////packs///////");
+        } catch (NullPointerException exc) {
+            System.out.println("Exc = " + exc);
+        }
+
+    }
+
+    private void showPacksCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(4);
+
+        String str = "Ось Ваші паки з флеш-картками. Оберіть один з них для продовження роботи";
+
+        List<String> packsNames = users.get(chatId).getPacksNames();
+        List<String> packsNamesCBD = IntStream.rangeClosed(0, packsNames.size()-1)
+                .mapToObj(String::valueOf) // Перетворення чисел в рядки
+                .collect(Collectors.toList());
+
+        ReplyKeyboard keyboard = createKeyboardVerticle(packsNames, packsNamesCBD);
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void showAllWordsFromPackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(5);
+
+        String str = "Ось ваші картки. Оберіть одну з них для продовження роботи:";
+
+        List words = users.get(chatId).getChoosedPack().getAllList();
+        List<String> wordsCBD = IntStream.rangeClosed(0, words.size()-1)
+                .mapToObj(String::valueOf) // Перетворення чисел в рядки
+                .collect(Collectors.toList());
+
+        ReplyKeyboard keyboard = createKeyboardVerticle(words, wordsCBD);
+        sendMessageCBD(update, str, keyboard);
+    }
+
+
+
+
+
+
+
+
 
 
 
