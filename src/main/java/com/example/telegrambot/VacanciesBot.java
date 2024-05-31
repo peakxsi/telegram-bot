@@ -20,6 +20,8 @@ import java.util.stream.IntStream;
 
 //maincommands
 
+//result
+
 @Component
 public class VacanciesBot extends TelegramLongPollingBot {
 
