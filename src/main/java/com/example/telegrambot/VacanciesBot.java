@@ -239,6 +239,163 @@ public class VacanciesBot extends TelegramLongPollingBot {
 
 
 
+    private void addPackCommand(Update update) {
+        String str = "Введіть назву паку:";
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(2);
+        System.out.println("stan==2");
+
+        users.get(chatId).addPack(new PackCard());
+
+        sendMessageCBD(update, str, createKeyboard(List.of("Скасувати додавання"), List.of("cancelAddingCBD")));
+    }
+
+    private void cancelAddingCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(0);
+        System.out.println("stan==0");
+
+        users.get(chatId).removeLastPack();
+
+        String str1 = "Дію додавання відмінено! Вас повернено до головного меню";
+
+        sendMessageCBD(update, str1);
+
+        String str = "Привіт від FlashMind - першого телеграм-бота з флеш-картками. Створюй, поширюй, навчайся!";
+        ReplyKeyboard keyboard = createKeyboard(List.of("Мої паки", "Додати пак", "Запустити пак"), List.of("myPacksCBD", "addPackCBD", "playPackCBD"));
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void addNameCommand(Update update) {
+        Long chatId = update.getMessage().getChatId();
+        users.get(chatId).setStan(0);
+
+        String name = update.getMessage().getText().toString();
+
+        for (User user: users.values()) {
+            ArrayList<PackCard> packs = user.getPacks();
+            for (PackCard curPack: packs) {
+                if (name.equals(curPack.getName())) {
+                    if (!curPack.isPrivate()) {
+                        users.get(chatId).removeLastPack();
+                        users.get(chatId).addPack(curPack.copy());
+
+                        String str1 = "Пак знайдено серед існуючих! Додати його копію до ваших паків?";
+                        ReplyKeyboard keyboard1 = createKeyboard(List.of("Так", "Ні", "Скасувати додавання"), List.of("yesAddExistCBD", "noAddExistCBD", "cancelAddingCBD"));
+
+                        sendMessage(update, str1, keyboard1);
+                        return;
+                    }
+                }
+            }
+        }
+
+        users.get(chatId).getLastPack().setName(name);
+        String str1 = "Тепер оберіть тип приватності (це визначатиме, чи можуть інші користувачі " +
+                "знайти ваш пак за іменем і додати його копію до своїх)";
+        ReplyKeyboard keyboard1 = createKeyboard(List.of("Приватний", "Публічний", "Скасувати додавання"), List.of("privacyTrueCBD", "privacyFalseCBD", "cancelAddingCBD"));
+        sendMessage(update, str1, keyboard1);
+    }
+
+    private void yesAddExistCommand(Update update) {
+        String str = "Пак додано! Вас повернено до головного меню";
+
+        sendMessageCBD(update, str);
+
+        startCommand(update);
+    }
+
+    private void noAddExistCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).removeLastPack();
+
+        String str1 = "Тоді введіть нову назву, яка не співпадатиме з існуючими";
+
+        sendMessageCBD(update, str1);
+
+        addPackCommand(update);
+    }
+
+    private void setPrivacyCommand(Update update, boolean privacy) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).getPacks().get(users.get(chatId).getPacks().size()-1).setPrivacy(privacy);
+        users.get(chatId).setStan(3);
+        System.out.println("stan==3");
+
+        String str = "Додайте першу картку! Введіть першу сторону картки і другу, розмежовуючи крапкою.  \"перше . друге\". " +
+                "Можете вводити одразу кілька карток, розмежовуючи через Enter";
+
+        sendMessageCBD(update, str, createKeyboard(List.of("Скасувати додавання"), List.of("cancelAddingCBD")));
+    }
+
+    private void addCardsCommand(Update update) {
+        Long chatId = update.getMessage().getChatId();
+        String str = "";
+
+        String text = update.getMessage().getText();
+        String[] cards = text.split("\\n");
+        int size = 0;
+
+        System.out.println(users.get(chatId).getLastPack().getName());
+
+        for (int i = 0; i < cards.length; i++) {
+            String[] parts = cards[i].split(" \\.");
+            if (parts.length == 2) {
+                users.get(chatId).getLastPack().add(parts[0].trim(), parts[1].trim());
+                size++;
+            } else {
+                str = "Введено некоректний формат данних, спробуйте ще!";
+                sendMessage(update, str, createKeyboard(List.of("Скасувати додавання"), List.of("cancelAddingCBD")));
+                return;
+            }
+        }
+
+        users.get(chatId).setStan(0);
+        System.out.println("stan==0");
+        str = "Додано " + size + " карточок! Продовжити?";
+        ReplyKeyboard keyboard = createKeyboard(List.of("Так", "Ні", "Скасувати додавання"),
+                List.of("yesAddMoreCardsCBD", "noAddMoreCardsCBD", "cancelAddingCBD"));
+        sendMessage(update, str, keyboard);
+    }
+
+    private void yesAddMoreCardsCommand(Update update) {
+        String str = "Введіть першу сторону картки і другу, розмежовуючи крапкою.  \"перше . друге\". " +
+                "Можете вводити одразу кілька карток, розмежовуючи через Enter";
+
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(3);
+        System.out.println("stan==3");
+
+        sendMessageCBD(update, str, createKeyboard(List.of("Скасувати додавання"), List.of("cancelAddingCBD")));
+    }
+
+    private void noAddMoreCardsCommand(Update update) {
+        String str = "Картки додано! Вас повернено до головного меню";
+
+        sendMessageCBD(update, str);
+
+        startCommand(update);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private void sendMessage(Update update, String message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(update.getMessage().getChatId());
