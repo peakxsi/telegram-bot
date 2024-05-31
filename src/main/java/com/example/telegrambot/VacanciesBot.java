@@ -92,6 +92,127 @@ public class VacanciesBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
 
+        if (update.getMessage() != null) {
+
+            Long chatId = update.getMessage().getChatId();
+            String message = update.getMessage().getText();
+
+            showPacks(users.get(chatId));
+
+            int curStan = 0;
+
+            try {
+                curStan = users.get(chatId).getStan();
+            } catch (NullPointerException exc) {
+                System.out.println("Exc = " + exc);
+            }
+
+            if (message.equals("/start")) {
+                handleStartCommand(update);
+            } else if (curStan == 1) {
+
+            } else if (curStan == 2) {
+                addNameCommand(update);
+            } else if (curStan == 3) {
+                addCardsCommand(update);
+            } else if (curStan == 7) {
+                getNewNameCommand(update);
+            }
+
+        }
+
+        if (update.getCallbackQuery() != null) {
+
+            Long chatId = update.getCallbackQuery().getMessage().getChatId();
+            String callbackData = update.getCallbackQuery().getData();
+
+            int curStan = 0;
+
+            if ("toMainMenuCBD".equals(callbackData)) {
+                toMainMenuCBD(update);
+            } else if ("cancelAddingCBD".equals(callbackData)) {
+                cancelAddingCommand(update);
+            } else {
+
+                try {
+                    curStan = users.get(chatId).getStan();
+                } catch (NullPointerException exc) {
+                    System.out.println("Exc = " + exc);
+                }
+
+                if (curStan == 4) {
+                    possibWithPackCommand(update);
+                } else if (curStan == 5) {
+                    redOrDelCardCommand(update);
+                } else if (curStan == 6) {
+                    getChoosedPackCommand(update);
+                } else {
+
+                    if ("myPacksCBD".equals(callbackData)) {
+                        showPacksCommand(update);
+                    } else if ("addPackCBD".equals(callbackData)) {
+                        addPackCommand(update);
+                    } else if ("playPackCBD".equals(callbackData)) {
+                        playPackCommand(update);
+                    } else if ("getFirstSideCBD".equals(callbackData)) {
+                        printFirstSideCard(update);
+                    } else if ("getSecondSideCBD".equals(callbackData)) {
+                        printSecondSideCard(update);
+                    } else if ("removeCardCBD".equals(callbackData)) {
+                        deleteCardTempCommand(update);
+
+
+                    }
+                    else if ("yesAddExistCBD".equals(callbackData)) {
+                        yesAddExistCommand(update);
+                    } else if ("noAddExistCBD".equals(callbackData)) {
+                        noAddExistCommand(update);
+                    } else if ("privacyTrueCBD".equals(callbackData)) {
+                        setPrivacyCommand(update, true);
+                    } else if ("privacyFalseCBD".equals(callbackData)) {
+                        setPrivacyCommand(update, false);
+                    } else if ("yesAddMoreCardsCBD".equals(callbackData)) {
+                        yesAddMoreCardsCommand(update);
+                    } else if ("noAddMoreCardsCBD".equals(callbackData)) {
+                        noAddMoreCardsCommand(update);
+                    }
+
+                    else if ("showAllCardsCBD".equals(callbackData)) {
+                        showAllCardsPackCommand(update);
+                    } else if ("toDeletePackCBD".equals(callbackData)) {
+                        isToDeletePackCommand(update);
+                    } else if ("toDefDeletePackCBD".equals(callbackData)) {
+                        defDeletePackCommand(update);
+                    }
+                    else if ("toRedactPackCBD".equals(callbackData)){
+                        chooseChangeCommand(update);
+                    } else if ("changeNameCBD".equals(callbackData)) {
+                        changeNameCommand(update);
+                    } else if ("changePrivacyCBD".equals(callbackData)) {
+                        changePrivacyCommand(update);
+                    } else if ("defChangePrivacy".equals(callbackData)) {
+                        defChangePrivacyCommand(update);
+                    } else if ("changeSidesCBD".equals(callbackData)) {
+                        changeSidesCommand(update);
+                    } else if ("changeCompCBD".equals(callbackData)) {
+                        changeCompCommand(update);
+                    } else  if ("redAddCardCBD".equals(callbackData)){
+                        addNewCardCommand(update);
+                    } else if ("redPackCBD".equals(callbackData)) {
+                        showAllWordsFromPackCommand(update);
+                    } else if ("defDelCardCBD".equals(callbackData)) {
+                        defDeleteCardCommand(update);
+                    } else if ("defRedCardCBD".equals(callbackData)) {
+                        defRedactCardCommand(update);
+                    } else if ("renewPackCBD".equals(callbackData)) {
+                        renewPackCommand(update);
+                    }
+
+
+                    //"changeNameCBD", "changePrivacyCBD", "changeCompCBD", "changeSidesCBD"
+                }
+            }
+        }
     }
 
 
@@ -604,7 +725,46 @@ public class VacanciesBot extends TelegramLongPollingBot {
 
 
 
+    private void startCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        if (!users.containsKey(chatId)) {
+            users.put(chatId, new User());
+        }
+        String str = "Привіт від FlashMind - першого телеграм-бота з флеш-картками. Створюй, поширюй, навчайся!";
+        ReplyKeyboard keyboard = createKeyboard(List.of("Мої паки", "Додати пак", "Запустити пак"),
+                List.of("myPacksCBD", "addPackCBD", "playPackCBD"));
 
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void handleStartCommand(Update update) {
+        Long chatId = update.getMessage().getChatId();
+        if (!users.containsKey(chatId)) {
+            users.put(chatId, new User());
+        }
+        String str = "Привіт від FlashMind - першого телеграм-бота з флеш-картками. Створюй, поширюй, навчайся!";
+        ReplyKeyboard keyboard = createKeyboard(List.of("Мої паки", "Додати пак", "Запустити пак"), List.of("myPacksCBD", "addPackCBD", "playPackCBD"));
+
+        sendMessage(update, str, keyboard);
+    }
+
+    private void toMainMenuCBD(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setChoosedPack(null);
+        users.get(chatId).setStan(0);
+        users.get(chatId).setChoosedCard(-1);
+
+        startCommand(update);
+    }
+
+    private void toMainMenu(Update update) {
+        Long chatId = update.getMessage().getChatId();
+        users.get(chatId).setChoosedPack(null);
+        users.get(chatId).setStan(0);
+        users.get(chatId).setChoosedCard(-1);
+
+        handleStartCommand(update);
+    }
 
 
 
