@@ -98,6 +98,147 @@ public class VacanciesBot extends TelegramLongPollingBot {
 
 
 
+    private void playPackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(6);
+
+        String str = "Ось Ваші паки з флеш-картками. Оберіть один з них для продовження роботи";
+
+        List<String> packsNames = users.get(chatId).getPacksNames();
+        List<String> packsNamesCBD = IntStream.rangeClosed(0, packsNames.size()-1)
+                .mapToObj(String::valueOf) // Перетворення чисел в рядки
+                .collect(Collectors.toList());
+
+        ReplyKeyboard keyboard = createKeyboardVerticle(packsNames, packsNamesCBD);
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void getChoosedPackCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        users.get(chatId).setStan(0);
+
+        int choosed = Integer.parseInt(update.getCallbackQuery().getData());
+        users.get(chatId).setChoosedPack(users.get(chatId).getPacks().get(choosed));
+
+        System.out.println("choosed = " + choosed + " = " + users.get(chatId).getPacks().get(choosed).getName());
+
+        String str = "Пак обрано! Картка надсилається..";
+
+        sendMessageCBD(update, str);
+
+        printFirstSideCard(update);
+    }
+
+    private void printFirstSideCard(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+        if (users.get(chatId).getChoosedPack().size() <= 0) {
+            String str1 = "Пак пустий! Картки відсутні! Спробуйте поновити його в налаштуваннях або додати нові картки" +
+                    "\n\nВас повернено до головного меню";
+            sendMessageCBD(update, str1);
+            toMainMenuCBD(update);
+            return;
+        }
+
+        users.get(chatId).getChoosedPack().next();
+
+        String str = users.get(chatId).getChoosedPack().getFirstSide();
+
+
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+
+        InlineKeyboardButton nextButton1 = new InlineKeyboardButton();
+        nextButton1.setText("Відповідь");
+        nextButton1.setCallbackData("getSecondSideCBD");
+        row1.add(nextButton1);
+
+        InlineKeyboardButton nextButton2 = new InlineKeyboardButton();
+        nextButton2.setText("Видалити");
+        nextButton2.setCallbackData("removeCardCBD");
+        row1.add(nextButton2);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        InlineKeyboardButton nextButton3 = new InlineKeyboardButton();
+        nextButton3.setText("До головного меню");
+        nextButton3.setCallbackData("toMainMenuCBD");
+        row2.add(nextButton3);
+
+        rows.add(row1);
+        rows.add(row2);
+
+        keyboard.setKeyboard(rows);
+
+
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void printSecondSideCard(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+        String str = users.get(chatId).getChoosedPack().getSecondSide();
+
+
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+
+        InlineKeyboardButton nextButton1 = new InlineKeyboardButton();
+        nextButton1.setText("Наступне");
+        nextButton1.setCallbackData("getFirstSideCBD");
+        row1.add(nextButton1);
+
+        InlineKeyboardButton nextButton2 = new InlineKeyboardButton();
+        nextButton2.setText("Видалити");
+        nextButton2.setCallbackData("removeCardCBD");
+        row1.add(nextButton2);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        InlineKeyboardButton nextButton3 = new InlineKeyboardButton();
+        nextButton3.setText("До головного меню");
+        nextButton3.setCallbackData("toMainMenuCBD");
+        row2.add(nextButton3);
+
+        rows.add(row1);
+        rows.add(row2);
+
+        keyboard.setKeyboard(rows);
+
+
+
+        sendMessageCBD(update, str, keyboard);
+    }
+
+    private void deleteCardTempCommand(Update update) {
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+        String str = "Картка " + users.get(chatId).getChoosedPack().getFirstSide() + " . " +
+                users.get(chatId).getChoosedPack().getSecondSide() + " видалена!" +
+                "\nПоновити пак можливо в його налаштуваннях";
+
+        users.get(chatId).getChoosedPack().removeCurTemp();
+
+        sendMessageCBD(update, str);
+
+        printFirstSideCard(update);
+    }
+
+
+
+
+
+
     private void sendMessage(Update update, String message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(update.getMessage().getChatId());
